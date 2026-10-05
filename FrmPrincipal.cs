@@ -23,7 +23,7 @@ namespace SistemaClientes
 
         private void btnNuevaPersona_Click(object sender, EventArgs e)
         {
-            FrmPersonasIndividuales formulario = new FrmPersonasIndividuales();
+            FrmPersonaIndividual formulario = new FrmPersonaIndividual();
             formulario.ShowDialog();
 
         }
