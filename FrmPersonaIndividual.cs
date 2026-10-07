@@ -12,9 +12,17 @@ namespace SistemaClientes
 {
     public partial class FrmPersonaIndividual : Form
     {
+        private int idPersona = 0;
+
         public FrmPersonaIndividual()
         {
             InitializeComponent();
+        }
+
+        public FrmPersonaIndividual(int id)
+        {
+            InitializeComponent();
+            idPersona = id;
         }
         private void FrmPersonaIndividual_Load(object sender, EventArgs e)
         {
@@ -23,6 +31,109 @@ namespace SistemaClientes
             CargarEstadosCiviles();
             CargarTiposIdentificacion();
             CargarCalidades();
+
+            if (idPersona > 0)
+            {
+                CargarPersona(idPersona);
+            }
+        }
+
+        private void CargarPersona(int id)
+        {
+            try
+            {
+                using (SqlConnection conexion = Conexion.ObtenerConexion())
+                {
+                    conexion.Open();
+
+                    using (SqlCommand comando = new SqlCommand(
+                        "sp_PersonaIndividual_Obtener",
+                        conexion))
+                    {
+                        comando.CommandType = CommandType.StoredProcedure;
+
+                        comando.Parameters.AddWithValue("@IdPersona", id);
+
+                        using (SqlDataReader reader = comando.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                txtNombreCompleto.Text =
+                                    reader["NombreCompleto"].ToString();
+
+                                txtLugarNacimiento.Text =
+                                    reader["LugarNacimiento"].ToString();
+
+                                if (reader["FechaNacimiento"] != DBNull.Value)
+                                {
+                                    dtpFechaNacimiento.Value =
+                                        Convert.ToDateTime(
+                                            reader["FechaNacimiento"]);
+                                }
+
+                                cmbNacionalidad.Text =
+                                    reader["Nacionalidad"].ToString();
+
+                                cmbGenero.Text =
+                                    reader["Genero"].ToString();
+
+                                cmbEstadoCivil.Text =
+                                    reader["EstadoCivil"].ToString();
+
+                                txtProfesionOficio.Text =
+                                    reader["ProfesionOficio"].ToString();
+
+                                cmbTipoIdentificacion.Text =
+                                    reader["TipoIdentificacion"].ToString();
+
+                                txtNumeroIdentificacion.Text =
+                                    reader["NumeroIdentificacion"].ToString();
+
+                                txtDireccion.Text =
+                                    reader["DireccionResidencia"].ToString();
+
+                                txtCondicionMigratoria.Text =
+                                    reader["CondicionMigratoria"].ToString();
+
+                                cmbCalidadActua.Text =
+                                    reader["CalidadActua"].ToString();
+
+                                txtNumeroEscritura.Text =
+                                    reader["NumeroEscritura"].ToString();
+
+                                txtReferenciaTransferencia.Text =
+                                    reader["ReferenciaTransferencia"].ToString();
+
+                                if (reader["Monto"] != DBNull.Value)
+                                {
+                                    txtMonto.Text =
+                                        Convert.ToDecimal(
+                                            reader["Monto"]).ToString("0.00");
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show(
+                                    "No se encontró la persona.",
+                                    "Editar persona",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Warning);
+
+                                Close();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo cargar la información de la persona.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         private void CargarNacionalidades()
@@ -166,17 +277,54 @@ namespace SistemaClientes
                 return;
             }
 
+            // Validar monto
+            decimal monto;
+
+            if (string.IsNullOrWhiteSpace(txtMonto.Text))
+            {
+                monto = 0;
+            }
+            else if (!decimal.TryParse(txtMonto.Text, out monto))
+            {
+                MessageBox.Show(
+                    "El monto ingresado no es válido.",
+                    "Validación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                txtMonto.Focus();
+                return;
+            }
+
             try
             {
                 using (SqlConnection conexion = Conexion.ObtenerConexion())
                 {
                     conexion.Open();
 
-                    using (SqlCommand comando = new SqlCommand(
-                        "sp_PersonaIndividual_Insertar",
-                        conexion))
+                    string procedimiento;
+
+                    if (idPersona == 0)
+                    {
+                        procedimiento = "sp_PersonaIndividual_Insertar";
+                    }
+                    else
+                    {
+                        procedimiento = "sp_PersonaIndividual_Actualizar";
+                    }
+
+                    using (SqlCommand comando =
+                        new SqlCommand(procedimiento, conexion))
                     {
                         comando.CommandType = CommandType.StoredProcedure;
+
+                        // ID solamente cuando estamos editando
+                        if (idPersona > 0)
+                        {
+                            comando.Parameters.AddWithValue(
+                                "@IdPersona",
+                                idPersona);
+                        }
 
                         comando.Parameters.AddWithValue(
                             "@NombreCompleto",
@@ -247,31 +395,14 @@ namespace SistemaClientes
                         comando.Parameters.AddWithValue(
                             "@NumeroEscritura",
                             string.IsNullOrWhiteSpace(txtNumeroEscritura.Text)
-                            ? (object)DBNull.Value: txtNumeroEscritura.Text.Trim());
+                                ? (object)DBNull.Value
+                                : txtNumeroEscritura.Text.Trim());
 
                         comando.Parameters.AddWithValue(
                             "@ReferenciaTransferencia",
                             string.IsNullOrWhiteSpace(txtReferenciaTransferencia.Text)
                                 ? (object)DBNull.Value
                                 : txtReferenciaTransferencia.Text.Trim());
-
-                        decimal monto;
-
-                        if (string.IsNullOrWhiteSpace(txtMonto.Text))
-                        {
-                            monto = 0;
-                        }
-                        else if (!decimal.TryParse(txtMonto.Text, out monto))
-                        {
-                            MessageBox.Show(
-                                "El monto ingresado no es válido.",
-                                "Validación",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
-
-                            txtMonto.Focus();
-                            return;
-                        }
 
                         comando.Parameters.AddWithValue(
                             "@Monto",
@@ -281,18 +412,30 @@ namespace SistemaClientes
                     }
                 }
 
-                MessageBox.Show(
-                    "La persona fue registrada correctamente.",
-                    "Registro exitoso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                if (idPersona == 0)
+                {
+                    MessageBox.Show(
+                        "La persona fue registrada correctamente.",
+                        "Registro exitoso",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "La persona fue actualizada correctamente.",
+                        "Actualización exitosa",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
 
-                LimpiarFormulario();
+                this.Close();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "No se pudo registrar la persona.\n\n" + ex.Message,
+                    "No se pudo guardar la información.\n\n" +
+                    ex.Message,
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

@@ -1,3 +1,4 @@
+using Guna.UI2.WinForms;
 using SistemaClientes.Clases;
 using System.Data;
 using System.Data.SqlClient;
@@ -30,17 +31,18 @@ namespace SistemaClientes
 
         private void btnNuevaEmpresa_Click(object sender, EventArgs e)
         {
+            FrmPersonasJuridicas formulario = new FrmPersonasJuridicas();
+            formulario.ShowDialog();
 
+            // Actualizar estadísticas después de registrar
+            CargarEstadisticas();
         }
 
         private void btnBuscarCliente_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(
-            "Módulo de búsqueda en construcción.",
-            "Sistema de Clientes",
-              MessageBoxButtons.OK,
-              MessageBoxIcon.Information
-                           );
+            FrmBuscarCliente formulario = new FrmBuscarCliente();
+            formulario.ShowDialog();
+
         }
 
         private void CargarEstadisticas()
@@ -88,6 +90,35 @@ namespace SistemaClientes
         private void FrmPrincipal_Load(object sender, EventArgs e)
         {
             CargarEstadisticas();
+        }
+
+        private void btnConsultar_Click(object sender, EventArgs e)
+        {
+            FrmBuscarCliente formulario = new FrmBuscarCliente();
+            formulario.ShowDialog();
+        }
+
+        private void pnlContenido_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void btnPersonasJuridicas_Click(object sender, EventArgs e)
+        {
+            FrmConsultarPersonasJuridicas formulario = new FrmConsultarPersonasJuridicas();
+            formulario.ShowDialog();
+        }
+
+        private void btnPersonasIndividuales_Click(object sender, EventArgs e)
+        {
+            FrmConsultarPersonas formulario = new FrmConsultarPersonas();
+            formulario.ShowDialog();
+        }
+
+        private void btnReportes_Click(object sender, EventArgs e)
+        {
+            FrmReportes formulario = new FrmReportes();
+            formulario.ShowDialog();
         }
     }
 
